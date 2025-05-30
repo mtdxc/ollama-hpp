@@ -26,8 +26,13 @@ bool on_receive_response(const ollama::response& response)
 
 int main()
 {
+#ifdef _WIN32
+    SetConsoleCP(CP_UTF8);
+    SetConsoleOutputCP(CP_UTF8);
+    ollama::setServerURL("http://192.168.24.10:11434"); // Set the Ollama server URL
+#endif
     std::string line;
-    ollama::request req("qwen3", "请以简短的方式回答我!");
+    ollama::request req("qwen3", "作为一个中文导游，请以简短方式回答我");
     signal(SIGINT, &signal_handler); // Register signal handler for Ctrl+C
     while (1) {
         std::getline(std::cin, line);
@@ -39,7 +44,7 @@ int main()
             if (response.as_json().contains("context")) {
                 req["context"] = response.as_json()["context"];
             }
-            if (response.as_json()["done"]==true) { 
+            if (response.as_json().contains("done") && response.as_json()["done"] == true) {
                 std::cout << std::endl;
                 return false;
             }
