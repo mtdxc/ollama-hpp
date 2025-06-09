@@ -491,19 +491,17 @@ public:
         std::string request_string = request.dump();
         if (ollama::log_requests) std::cout << request_string << std::endl;
 
-        std::shared_ptr<std::vector<std::string>> partial_responses = std::make_shared<std::vector<std::string>>();
+        std::shared_ptr<std::string> partial_responses = std::make_shared<std::string>();
 
         auto stream_callback = [on_receive_token, partial_responses](const char *data, size_t data_length)->bool{
             
-            std::string message(data, data_length);
             bool continue_stream = true;
-
+            std::string message(data, data_length);
             if (ollama::log_replies) std::cout << message << std::endl;
             try 
             {   
-                partial_responses->push_back(message);
-                std::string total_response = std::accumulate(partial_responses->begin(), partial_responses->end(), std::string(""));                
-                ollama::response response(total_response);
+                partial_responses->append(message);
+                ollama::response response(*partial_responses);
                 partial_responses->clear();  
                 continue_stream = on_receive_token(response); 
             }
@@ -554,7 +552,7 @@ public:
         std::string request_string = request.dump();
         if (ollama::log_requests) std::cout << request_string << std::endl;      
 
-        std::shared_ptr<std::vector<std::string>> partial_responses = std::make_shared<std::vector<std::string>>();
+        std::shared_ptr<std::string> partial_responses = std::make_shared<std::string>();
 
         auto stream_callback = [on_receive_token, partial_responses](const char *data, size_t data_length)->bool{
             
@@ -564,10 +562,9 @@ public:
             if (ollama::log_replies) std::cout << message << std::endl;
             try 
             {   
-                partial_responses->push_back(message);
-                std::string total_response = std::accumulate(partial_responses->begin(), partial_responses->end(), std::string(""));                
-                ollama::response response(total_response, ollama::message_type::chat);
-                partial_responses->clear();  
+                partial_responses->append(message);
+                ollama::response response(*partial_responses, ollama::message_type::chat);
+                partial_responses->clear();
 
                 if ( response.has_error() ) { if (ollama::use_exceptions) throw ollama::exception("Ollama response returned error: "+response.get_error() ); }
                 continue_stream = on_receive_token(response);
